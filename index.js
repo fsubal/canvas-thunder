@@ -47,7 +47,7 @@ class Thunder {
 }
 
 class RecursivePolyline {
-  static get DEPTH() { return 10 }
+  static get MAX_DEPTH() { return 10 }
   static get PARTS_COUNT() { return 3 }
 
   constructor(start, end, depth) {
@@ -60,7 +60,7 @@ class RecursivePolyline {
 
     // TODO: 3等分された線を再帰的に作成
     /*
-    this.children = (depth === RecursivePolyline.DEPTH) ? [] : (
+    this.children = (depth === RecursivePolyline.MAX_DEPTH) ? [] : (
       this.points.map((_, index, points) => {
         const previous = index ? points[index] : this.start;
         const next = points[index];
