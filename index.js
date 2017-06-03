@@ -46,9 +46,6 @@ class Thunder {
   }
 }
 
-/**
- * TODO: めんどいから法線計算せずに0度方向に動くことだけ考える
- */
 class RecursivePolyline {
   static get DEPTH() { return 10 }
   static get PARTS_COUNT() { return 3 }
@@ -61,7 +58,8 @@ class RecursivePolyline {
     // 3等分された位置にうねうね動く点を作成
     this.points = this._generatePoints(RecursivePolyline.PARTS_COUNT);
 
-    // 3等分された線を再帰的に作成
+    // TODO: 3等分された線を再帰的に作成
+    /*
     this.children = (depth === RecursivePolyline.DEPTH) ? [] : (
       this.points.map((_, index, points) => {
         const previous = index ? points[index] : this.start;
@@ -70,6 +68,7 @@ class RecursivePolyline {
         return new RecursivePolyline(previous, next, this.depth + 1);
       })
     );
+    */
   }
 
   _generatePoints(count) {
@@ -113,10 +112,14 @@ class Point {
     this.C = coefficient;
   }
 
+
+  /**
+   * TODO: めんどいから法線計算せずに0度方向に動くことだけ考える
+   */
   update(currentTime) {
     const { C, easingFnc, initialX, initialY } = this;
 
-    this.x = C * easingFnc(currentTime) + initialX;
+    // this.x = C * easingFnc(currentTime) + initialX;
     this.y = C * easingFnc(currentTime) + initialY;
 
     return this;
