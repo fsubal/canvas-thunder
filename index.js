@@ -1,5 +1,7 @@
 import domready from 'domready';
 
+const noopEasing = () => 0;
+
 class Renderer {
   constructor(selector) {
     const canvas = document.querySelector(selector);
@@ -9,15 +11,24 @@ class Renderer {
     this.context = canvas.getContext('2d');
     this.currentTime = 0;
 
-    this.thunders = Array(1).fill().map(thunder => (
-      new Thunder([0, 250], [500, 250], this.context)
+    this.thunders = Array(1).fill().map(thunder => new Thunder(
+      new Point(0, 250, [noopEasing, 0]),
+      new Point(500, 250, [noopEasing, 0]),
+      this.context
     ));
 
-    requestAnimationFrame(this.render);
+    this.loop();
   }
 
+  // https://jsfiddle.net/jkx3v6ee/
   render() {
-    return this.thunders.map(thunder => thunder.render(this.currentTime++));
+    this.context.clearRect(0, 0, 500, 500);
+    this.thunders.map(thunder => thunder.render(this.currentTime++));
+  }
+
+  loop() {
+    this.render();
+    requestAnimationFrame(() => this.loop());
   }
 }
 
@@ -32,17 +43,28 @@ class Thunder {
 
   render(currentTime) {
     const polyline = this.polyline.updatePoints(currentTime);
-    const points = polyline.points;
+    const children = polyline.children;
 
     this.context.beginPath();
-    this.context.moveTo(...points.pop());
+    this.context.moveTo(this.start.x, this.start.y);
 
-    for (const point of points) {
-      this.context.lineTo(...point);
+    for (const child of children) {
+      this._renderChild(child);
     }
 
-    this.context.closePath();
+    this.context.lineTo(this.end.x, this.end.y);
+
     this.context.stroke();
+  }
+
+  _renderChild(child) {
+    child.points.forEach((point, i) => {
+      if (child.children && child.children[i]) {
+        this._renderChild(child.children[i]);
+      }
+
+      this.context.lineTo(point.x, point.y);
+    });
   }
 }
 
@@ -59,16 +81,18 @@ class RecursivePolyline {
     this.points = this._generatePoints(RecursivePolyline.PARTS_COUNT);
 
     // TODO: 3等分された線を再帰的に作成
-    /*
-    this.children = (depth === RecursivePolyline.MAX_DEPTH) ? [] : (
-      this.points.map((_, index, points) => {
+    if (depth !== RecursivePolyline.MAX_DEPTH) {
+      this.children = this.points.map((_, index, points) => {
         const previous = index ? points[index] : this.start;
         const next = points[index];
 
         return new RecursivePolyline(previous, next, this.depth + 1);
-      })
-    );
-    */
+      });
+
+      this.children.push(
+        new RecursivePolyline(points.pop(), this.end, this.depth + 1)
+      );
+    }
   }
 
   _generatePoints(count) {
@@ -76,19 +100,19 @@ class RecursivePolyline {
     const points = Array(count).fill();
 
     return points.map((_, index) => {
-      const [x1, y1] = this.start;
-      const [x2, y2] = this.end;
+      const {x: x1, y: y1} = this.start;
+      const {x: x2, y: y2} = this.end;
 
       /** 50%の確率でサイン関数かコサイン関数のどちらかを選ぶ ＋ それにランダムな係数を与える */
       const easing = (Math.random() > 0.5) ? (
-        [Math.sin, /** 係数 = */ Math.random()]
+        [(t) => Math.sin(t), /** 係数 = */ Math.random()]
       ) : (
-        [Math.cos, /** 係数 = */ Math.random()]
+        [(t) => Math.cos(t), /** 係数 = */ Math.random()]
       );
 
       return new Point(
-        (x1 + x2) * (index + 1) / RecursivePolyline.PARTS_COUNT,
-        (y1 + y2) * (index + 1) / RecursivePolyline.PARTS_COUNT,
+        (x1 + x2) * (index + 1) / (RecursivePolyline.PARTS_COUNT + 1),
+        250,
         easing
       );
     });
@@ -96,6 +120,10 @@ class RecursivePolyline {
 
   updatePoints(currentTime) {
     const points = this.points.map(point => point.update(currentTime));
+    if (this.children) {
+      this.children = this.children.map(child => child.updatePoints());
+    }
+
     return this;
   }
 }
@@ -112,7 +140,6 @@ class Point {
     this.C = coefficient;
   }
 
-
   /**
    * TODO: めんどいから法線計算せずに0度方向に動くことだけ考える
    */
@@ -120,7 +147,7 @@ class Point {
     const { C, easingFnc, initialX, initialY } = this;
 
     // this.x = C * easingFnc(currentTime) + initialX;
-    this.y = C * easingFnc(currentTime) + initialY;
+    this.y = 100 * C * easingFnc(currentTime) + initialY;
 
     return this;
   }
