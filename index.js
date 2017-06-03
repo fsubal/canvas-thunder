@@ -32,7 +32,7 @@ class Thunder {
 
   render(currentTime) {
     const polyline = this.polyline.updatePoints(currentTime);
-    const points = polyline.points();
+    const points = polyline.points;
 
     this.context.beginPath();
     this.context.moveTo(...points.pop());
