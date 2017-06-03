@@ -87,8 +87,8 @@ class RecursivePolyline {
       );
 
       return new Point(
-        (x1 + x2) * (index + 1) / WigglingLine.PARTS_COUNT,
-        (y1 + y2) * (index + 1) / WigglingLine.PARTS_COUNT,
+        (x1 + x2) * (index + 1) / RecursivePolyline.PARTS_COUNT,
+        (y1 + y2) * (index + 1) / RecursivePolyline.PARTS_COUNT,
         easing
       );
     });
